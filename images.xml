@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:mulerequester="http://www.mulesoft.org/schema/mule/mulerequester" xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns:ftp="http://www.mulesoft.org/schema/mule/ee/ftp" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/ee/ftp http://www.mulesoft.org/schema/mule/ee/ftp/current/mule-ftp-ee.xsd
+http://www.mulesoft.org/schema/mule/mulerequester http://www.mulesoft.org/schema/mule/mulerequester/current/mule-mulerequester.xsd">
+    <http:listener-config name="HTTP_Listener_Configuration" host="0.0.0.0" port="8081" doc:name="HTTP Listener Configuration"/>
+    <file:connector name="File" autoDelete="false" streaming="true" validateConnections="true" doc:name="File"/>
+    <flow name="imagesFlow">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/image" allowedMethods="GET" doc:name="HTTP"/>
+        <logger level="INFO" doc:name="Logger"/>
+        <set-payload value="#[Thread.currentThread().getContextClassLoader().getResourceAsStream(&quot;mulesoft.jpeg&quot;);]" doc:name="Set Payload" mimeType="image/jpeg"/>
+        <logger level="INFO" doc:name="Logger"/>
+    </flow>
+    <flow name="imageByIdFlow">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/image/{imageId}" allowedMethods="GET" doc:name="HTTP"/>
+        <logger message="#[message.inboundProperties.'http.uri.params'.imageId]" level="INFO" doc:name="Logger"/>
+        <choice doc:name="Choice">
+            <when expression="#[message.inboundProperties.'http.uri.params'.imageId==1]">
+                <set-payload value="#[Thread.currentThread().getContextClassLoader().getResourceAsStream(&quot;mulesoft.jpeg&quot;);]" mimeType="image/jpeg" doc:name="Set Payload"/>
+            </when>
+            <when expression="#[message.inboundProperties.'http.uri.params'.imageId==2]">
+                <set-payload value="#[Thread.currentThread().getContextClassLoader().getResourceAsStream(&quot;mulesoft.png&quot;);]" mimeType="image/png" doc:name="Set Payload"/>
+            </when>
+            <otherwise>
+                <set-payload value="#['Image Not found']" doc:name="Set Payload"/>
+            </otherwise>
+        </choice>
+        <logger level="INFO" doc:name="Logger"/>
+    </flow>
+    <flow name="imageWithRequester">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/image/mulesoft" allowedMethods= "GET" doc:name ="HTTP"/>
+        <logger level="INFO" doc:name= "Logger"/>
+        <mulerequester:request resource="file://src/main/resources/mulesoft.jpeg" doc:name= "Mule Requester" timeout="10000" metadata:id= "6dff3a74-80b0-49ef-8bef-d8706b0f6c60" />
+        <logger level="INFO" doc:name= "Logger"/>
+    </flow >
+
+
+</mule>
